@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!-- Native library (C): built by native/build.sh or native/build.cmd, copied next to the executable. -->
+  <PropertyGroup>
+    <NativeDir>$(MSBuildThisFileDirectory)../../native/</NativeDir>
+    <NativeFile Condition="$([MSBuild]::IsOSPlatform('Windows'))">dqnative.dll</NativeFile>
+    <NativeFile Condition="$([MSBuild]::IsOSPlatform('OSX'))">libdqnative.dylib</NativeFile>
+    <NativeFile Condition="$([MSBuild]::IsOSPlatform('Linux'))">libdqnative.so</NativeFile>
+  </PropertyGroup>
+
+  <Target Name="BuildNative" BeforeTargets="BeforeBuild" Condition="!Exists('$(NativeDir)lib/$(NativeFile)')">
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" Command="call &quot;$(NativeDir)build.cmd&quot;" ContinueOnError="true" />
+    <Exec Condition="!$([MSBuild]::IsOSPlatform('Windows'))" Command="sh &quot;$(NativeDir)build.sh&quot;" ContinueOnError="true" />
+  </Target>
+
+  <Target Name="CopyNative" AfterTargets="Build">
+    <Copy Condition="Exists('$(NativeDir)lib/$(NativeFile)')" SourceFiles="$(NativeDir)lib/$(NativeFile)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Warning Condition="!Exists('$(NativeDir)lib/$(NativeFile)')" Text="Native library $(NativeFile) not found in native/lib. Build it with native/build.sh or native/build.cmd." />
+  </Target>
+</Project>
